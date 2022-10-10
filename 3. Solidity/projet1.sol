@@ -36,30 +36,35 @@ contract Voting is Ownable {
     uint winningProposalId;
 
  
+    // L'administrateur du vote enregistre une liste blanche d'électeurs identifiés par leur adresse Ethereum.
     function registerVoter(address _address) public onlyOwner {
         require(workflowStatus == WorkflowStatus.RegisteringVoters, unicode"L'inscription des électeurs est fermée");
         voters[_address] = Voter(true, false, 0);
         emit VoterRegistered(_address);
     }
 
+    // L'administrateur du vote commence la session d'enregistrement de la proposition
     function startProposalsRegistration() public onlyOwner {
         require(workflowStatus == WorkflowStatus.RegisteringVoters, unicode"Il faut d'abord inscrire les électeurs");
         workflowStatus = WorkflowStatus.ProposalsRegistrationStarted;
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, workflowStatus);
     }
 
+    // L'administrateur du vote stoppe la session d'enregistrement de la proposition
     function stopProposalsRegistration() public onlyOwner {
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationStarted, "La session d'enregistrement des propositions n'est pas encore ouverte");
         workflowStatus = WorkflowStatus.ProposalsRegistrationEnded;
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, workflowStatus);
     }
 
+    // L'administrateur débute la session des votes
     function startVotingSession() public onlyOwner {
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationEnded, "La session d'enregistrement des propositions est toujours ouverte");
         workflowStatus = WorkflowStatus.VotingSessionStarted;
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, workflowStatus);
     }
 
+    // L'administrateur stoppe la session des votes
     function stopVotingSession() public onlyOwner {
         require(workflowStatus == WorkflowStatus.VotingSessionStarted, "La session de vote n'est pas encore ouverte");
         workflowStatus = WorkflowStatus.VotingSessionEnded;
@@ -104,7 +109,7 @@ contract Voting is Ownable {
         }
     }   
 
-    // Tout le monde peut voir le gagnant
+    // Tout le monde peut voir le nom du gagnant ou de la proposition
     function getWinner() public view returns(string memory) {
         require(workflowStatus == WorkflowStatus.VotesTallied, "Le nom du gagnant n'est pas disponible");
         return proposals[winningProposalId].description;
