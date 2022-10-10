@@ -98,7 +98,7 @@ contract Voting is Ownable {
     }
 
     // Détermination du gagnant
-    function countVotes() private {
+    function countVotes() public onlyOwner {
         require(workflowStatus == WorkflowStatus.VotingSessionEnded, "La session de vote est toujours ouverte");
         workflowStatus = WorkflowStatus.VotesTallied;
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, workflowStatus);
