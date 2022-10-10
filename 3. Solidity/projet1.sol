@@ -71,7 +71,7 @@ contract Voting is Ownable {
         _;
     }   
   
-    
+    // Ajout de la proposition de l'électeur
     function addproposal(string memory description) public isRegistered {
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationStarted, unicode"La session d'enregistrement des propositions est fermée"); 
         require(voters[msg.sender].votedProposalId == 0, unicode"Votre proposition a déjà été prise en compte");       
@@ -79,7 +79,8 @@ contract Voting is Ownable {
         emit ProposalRegistered(proposals.length);
     }
 
-    function showProposals() public view returns(Proposal[] memory)  {
+    // Liste des propositions 
+    function getProposals() public view returns(Proposal[] memory)  {
         return proposals;
     }
 
@@ -91,7 +92,7 @@ contract Voting is Ownable {
         emit Voted(msg.sender, _votedProposalId);
     }
 
-    // 
+    // Détermination du gagnant
     function countVotes() private {
         require(workflowStatus == WorkflowStatus.VotingSessionEnded, "La session de vote est toujours ouverte");
         workflowStatus = WorkflowStatus.VotesTallied;
@@ -103,6 +104,7 @@ contract Voting is Ownable {
         }
     }   
 
+    // Tout le monde peut voir le gagnant
     function getWinner() public view returns(string memory) {
         require(workflowStatus == WorkflowStatus.VotesTallied, "Le nom du gagnant n'est pas disponible");
         return proposals[winningProposalId].description;
