@@ -33,7 +33,10 @@ contract Voting is Ownable {
     mapping(address => Voter) voters;
     WorkflowStatus workflowStatus = WorkflowStatus.RegisteringVoters;
     Proposal[] proposals;
-    uint winningProposalId;
+    
+    // Propostions ayant le plus votes (permet d'identifier les potentielles égalités)
+    uint nbMaxVotes = 0; 
+    Proposal[] winningProposals;
 
     constructor(){ 
         workflowStatus = WorkflowStatus.RegisteringVoters;
@@ -50,6 +53,11 @@ contract Voting is Ownable {
         require(workflowStatus == WorkflowStatus.RegisteringVoters, "Inscription des electeurs fermee");
         voters[_address] = Voter(true, false, 0);
         emit VoterRegistered(_address);
+    }
+
+    // Voir les informations d'un voteur
+    function getVoter(address _address) view public returns (Voter memory) {
+        return voters[_address];
     }
 
     // L'administrateur du vote commence la session d'enregistrement de la proposition
@@ -86,7 +94,7 @@ contract Voting is Ownable {
         return proposals;
     }
 
-     modifier isRegistered() {
+    modifier isRegistered() {
         require(voters[msg.sender].isRegistered, unicode"Vous n'êtes pas inscrit sur la liste de vote");
         _;
     }   
@@ -106,7 +114,7 @@ contract Voting is Ownable {
     }
 
     // Les électeurs inscrits votent pour leur proposition préférée.
-    // proposals(string,uint256)[]: BERNARD,0,DAMIEN,0,LAURENT,0,LEA,0,SANDRINE,0,LUCIE,0
+    // POUR VOTER saisir la position de la proposition dans le tableau à partir de 0
    function vote(uint _votedProposalId) public isRegistered {
         require(_votedProposalId >= 0, "Vote invalide");
         require(workflowStatus == WorkflowStatus.VotingSessionStarted, "La session de vote n'est pas encore ouverte");
@@ -116,20 +124,27 @@ contract Voting is Ownable {
         emit Voted(msg.sender, _votedProposalId);
     }
 
-    // Détermination du gagnant
+    // Dépouillemement
     function countVoteees() public onlyOwner {
         require(workflowStatus == WorkflowStatus.VotingSessionEnded, "La session de vote est toujours ouverte");
         updateWorkflowStatus(WorkflowStatus.VotesTallied);
+
+        // Propostions ayant le plus votes (permet d'identifier les potentielles égalités)
         for (uint i = 0; i < proposals.length; i++){
-            if (proposals[i].voteCount >= winningProposalId){
-                winningProposalId = proposals[i].voteCount;
+            if (proposals[i].voteCount >= nbMaxVotes){
+                nbMaxVotes = proposals[i].voteCount;
             }
         }
     }   
 
     // Tout le monde peut voir le gagnant ou de la proposition
-    function getWinner() public view returns(Proposal memory) {
+    function getWinner() public returns(Proposal[] memory) {
         require(workflowStatus == WorkflowStatus.VotesTallied, "Le nom du gagnant n'est pas disponible");
-        return proposals[winningProposalId];
+        for (uint i = 0; i < proposals.length; i++){
+            if (proposals[i].voteCount == nbMaxVotes){
+                winningProposals.push(proposals[i]);
+            }
+        }
+        return winningProposals;
     }
 }
