@@ -117,10 +117,10 @@ contract Voting is Ownable {
     }
 
     // Détermination du gagnant
-    function countVotes() public onlyOwner {
+    function countVoteees() public onlyOwner {
         require(workflowStatus == WorkflowStatus.VotingSessionEnded, "La session de vote est toujours ouverte");
         updateWorkflowStatus(WorkflowStatus.VotesTallied);
-        for (uint i = 0; i <= proposals.length; i++){
+        for (uint i = 0; i < proposals.length; i++){
             if (proposals[i].voteCount >= winningProposalId){
                 winningProposalId = proposals[i].voteCount;
             }
