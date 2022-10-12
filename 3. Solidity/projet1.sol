@@ -14,14 +14,18 @@ contract Voting is Ownable {
     }
     // Liste des votants
     mapping(address => Voter) voters;
+    // Propostions ayant le plus votes (permet d'identifier les potentielles égalités)
+    uint nbMaxVotes = 0;
 
     // Proposition de vote
     struct Proposal {
         string description;
         uint voteCount;
     }
-    // Liste des propositions
+    // Liste des propositions 
     Proposal[] proposals;
+    // Tableau contenant le gagnant - eventuellement les gagnants en cas d'égalité
+    Proposal[] winningProposals;
 
     // Statuts session de vote
     enum WorkflowStatus {
@@ -41,14 +45,15 @@ contract Voting is Ownable {
     event ProposalRegistered(uint proposalId);
     event Voted (address voter, uint proposalId);
 
-    // Propostions ayant le plus votes (permet d'identifier les potentielles égalités)
-    uint nbMaxVotes = 0;
-    // Liste du gagnant - eventuellement des gagnants en cas d'égalité
-    Proposal[] winningProposals;
-
     constructor(){ 
         workflowStatus = WorkflowStatus.RegisteringVoters;
     }
+
+    // Le caller doit être enregistré comme électeur pour réaliser l'action
+    modifier isRegistered() {
+        require(voters[msg.sender].isRegistered, unicode"Vous n'êtes pas inscrit sur la liste de vote");
+        _;
+    } 
 
     // Update du statut de la session de vote
     function _updateWorkflowStatus(WorkflowStatus newStatus) private {
@@ -57,7 +62,7 @@ contract Voting is Ownable {
     }
 
     // L'administrateur du vote enregistre une liste blanche d'électeurs identifiés par leur adresse Ethereum.
-    function registerVoter(address _address) public onlyOwner {
+    function addVoterToWhitelist(address _address) public onlyOwner {
         require(workflowStatus == WorkflowStatus.RegisteringVoters, "Inscription des electeurs fermee");
         voters[_address] = Voter(true, false, 0);
         emit VoterRegistered(_address);
@@ -85,7 +90,7 @@ contract Voting is Ownable {
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationEnded, "La session d'enregistrement des propositions doit etre fermee");
 
         // Ici je vérifie la présence d'au moins 2 propositions pour pouvoir voter
-        if(proposals.length <= 2){
+        if(proposals.length < 2){
             _updateWorkflowStatus(WorkflowStatus.ProposalsRegistrationStarted);
             revert("Un minimum de 2 propositions est requis pour voter");
         }
@@ -102,12 +107,6 @@ contract Voting is Ownable {
     function getProposals() public view returns(Proposal[] memory)  {
         return proposals;
     }
-
-    // Le caller doit être enregistré comme électeur pour réaliser l'action
-    modifier isRegistered() {
-        require(voters[msg.sender].isRegistered, unicode"Vous n'êtes pas inscrit sur la liste de vote");
-        _;
-    }   
   
     // Ajouter une proposition
     function addproposal(string memory _newProposalDescription) public isRegistered {
@@ -154,9 +153,9 @@ contract Voting is Ownable {
                 if (proposals[i].voteCount > nbMaxVotes){
                     delete winningProposals;
                 }
-                // On conserve le nombre de votse le plus important
+                // On conserve le nombre de votes le plus important
                 nbMaxVotes = proposals[i].voteCount;
-                // On enregistre la proposition gagante ou les propositions gaghnantes en cas d'égalité
+                // On enregistre la proposition gagnante ou les éventuelles propositions gaghnantes en cas d'égalité
                 winningProposals.push(proposals[i]);
             }
         }
