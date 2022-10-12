@@ -114,15 +114,18 @@ contract Voting is Ownable {
         require(bytes(_newProposalDescription).length > 0, "Aucune proposition renseignee"); 
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationStarted, "La session d'enregistrement des propositions est fermee"); 
 
-        // La proposition est ajoutée si pas déjà présente (éviter les doublons)
+        // La proposition est ajoutée si pas déjà présente parmi les propositions existantes (éviter les doublons)
         for(uint i = 0; i < proposals.length; i++){
             if (keccak256(abi.encodePacked(proposals[i].description)) == keccak256(abi.encodePacked(_newProposalDescription))) {
                 revert("Une proposition existe deja");
             }
         }
 
+        // Ajout de la proposition
         proposals.push(Proposal(_newProposalDescription, 0));
-        emit ProposalRegistered(proposals.length);
+
+        // EVENT - proposalId = index de la proposition dans le tableau
+        emit ProposalRegistered(proposals.length-1);
     }
 
     // Les électeurs inscrits votent pour leur proposition préférée.
@@ -134,6 +137,8 @@ contract Voting is Ownable {
 
         voters[msg.sender] = Voter(true, true, _indexVotedProposalId);
         proposals[_indexVotedProposalId].voteCount += 1;
+
+        // EVENT - proposalId = index de la proposition dans le tableau
         emit Voted(msg.sender, _indexVotedProposalId);
     }
 
