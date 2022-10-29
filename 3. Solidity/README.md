@@ -16,7 +16,7 @@ $ npm install truffle --prefix .
 ### Pré-requis
 
 - Le fichier Voting.sol (répertoire "contracts")
-- Le fichier TestVoting.sol (répertorie "tests")
+- Le fichier projet2.sol (répertorie "tests")
 
 ### Initialisation de truffle
 
